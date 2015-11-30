@@ -5,7 +5,6 @@ import xlrd
 import xlwt
 #import xlutils
 import os
-import sys
 from optparse import OptionParser
 
 
@@ -225,40 +224,57 @@ def excel_table_byname(file = 'file.xls', judgeindex = 0, readindex1 = 0, \
     return list
 
 
-def parse_args(argv):
-    '''
-    set parse args
-    '''
+def SetupCommandLineOptions():
+    """Sets up command line parsing.
+
+    Return:
+        An optparse.OptionParser() object.
+    """
     Usage = "Usage: ./trans_excel.py [-d dir] [-f filename.xls]"
     parser = OptionParser(Usage)
     parser.add_option('-f', '--file', dest='FILE', help='operate specify file.')
-    parser.add_option('-d', '--dir', dest='DIR', help='operate all dir files.')
+    parser.add_option('-d', '--dir', dest='DIR',
+                      help='operate all files in the dir.')
 
-    (options, args) = parser.parse_args()
-    return options
+    return parser
+
+
+def ParseCommandLineArguments(parser):
+    """Parses command line arguments and handlers error checking.
+
+    Args:
+        parser: An optparse.OptionParser() object initialized with options.
+
+    Returns:
+        The result of OptionParser.parse after it has been checked for errors.
+    """
+    opts, args = parser.parse_args()
+    if args:
+        parser.error('unexpected positional arguments "%s"' % ' '.join(args))
+    if not opts.DIR and not opts.FILE:
+        parser.error("-d requires a value or -f requires a vlues.")
+
+    return opts
 
 
 def main(argv=None):
-    '''
-    main function.
-    '''
-    # set parse_args
-    options =  parse_args(argv)
+    parser = SetupCommandLineOptions()
+    opts = ParseCommandLineArguments(parser)
 
-    if options.DIR:
-        print "Operate all ", options.DIR
-        dirlist = get_all_dir(options.DIR)
+    if opts.DIR:
+        print "Operate all ", opts.DIR
+        dirlist = get_all_dir(opts.DIR)
         get_all_files_from_dir(dirlist)
 
-    if options.FILE:
-        filedir = os.path.dirname(options.FILE)
-        filename = os.path.basename(options.FILE)
+    if opts.FILE:
+        filedir = os.path.dirname(opts.FILE)
+        filename = os.path.basename(opts.FILE)
         print filedir + os.sep + filename
         (citycode, cityname) = get_codeandname_from_file(filename)
-        readfile = citycode + cityname +'.xls'
+        readfile = citycode + cityname + '.xls'
         writefile = citycode + cityname + 'Sheet3.xls'
         write_result_to_sheet3(unicode(cityname, 'utf-8'), readfile, writefile, 8,\
                                u'表3_集中供水工程基本情况')
 
 if __name__=='__main__':
-    main(sys.argv)
+    main()
